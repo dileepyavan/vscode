@@ -476,6 +476,32 @@ describe('createResponsesRequestBody', () => {
 		accessor.dispose();
 		services.dispose();
 	});
+
+	it('sends assistant messages without a fake output message id', () => {
+		const services = createPlatformServices();
+		const accessor = services.createTestingAccessor();
+		const instantiationService = accessor.get(IInstantiationService);
+		const messages: Raw.ChatMessage[] = [
+			{
+				role: Raw.ChatRole.Assistant,
+				content: [{ type: Raw.ChatCompletionContentPartKind.Text, text: 'previous answer' }],
+			},
+		];
+
+		const body = instantiationService.invokeFunction(servicesAccessor => createResponsesRequestBody(servicesAccessor, createRequestOptions(messages, false), testEndpoint.model, testEndpoint));
+
+		expect(body.input).toContainEqual({
+			role: 'assistant',
+			content: [{ type: 'input_text', text: 'previous answer' }],
+			type: 'message',
+			phase: undefined,
+		});
+		expect(body.input?.[0]).not.toHaveProperty('id');
+		expect(body.input?.[0]).not.toHaveProperty('status');
+
+		accessor.dispose();
+		services.dispose();
+	});
 });
 
 describe('processResponseFromChatEndpoint telemetry', () => {
